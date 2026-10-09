@@ -1,30 +1,20 @@
 pipeline {
     agent any
-
     environment {
-        APP_NAME = 'demo-app'
+        IMAGE = "demo-app:${BUILD_NUMBER}"
     }
-
-    options {
-        timeout(time: 5, unit: 'MINUTES')
-    }
-
     stages {
-        stage('Build') {
-            steps { echo "Building ${APP_NAME}" }
-        }
         stage('Test') {
-            steps { sh 'echo running tests && exit 0' }
+            steps { sh 'python3 -m unittest -v' }
         }
-        stage('Deploy') {
-            when { branch 'main' }
-            steps { echo 'Deploying...' }
+        stage('Build Image') {
+            steps { sh 'docker build -t $IMAGE .' }
+        }
+        stage('Run Image') {
+            steps { sh 'docker run --rm $IMAGE' }
         }
     }
-
     post {
-        success { echo 'Pipeline passed' }
-        failure { echo 'Pipeline failed' }
-        always  { echo 'Cleanup runs either way' }
+        always { sh 'docker image prune -f' }
     }
 }
